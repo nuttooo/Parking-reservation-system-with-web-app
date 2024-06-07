@@ -1,0 +1,101 @@
+// WiFi network credentials
+#include <Arduino.h>
+#include <ESP8266WiFiMulti.h>
+#include <ESP8266HTTPClient.h>
+#include <ESP8266WiFi.h>
+
+const char* ssid = "Ponix_BKK_2.4G";
+const char* password = "0897897784";
+
+// Server details
+const char* server = "localhost";
+const int httpPort = 80;
+//String serverName = "127.0.0.1";
+
+
+// IR sensor and LED pin
+int ledPin = 2;
+int digitalPin = D1;
+int data = 0;
+
+void setup () {
+  Serial.begin(9600); //
+  //IR sensor
+  pinMode(ledPin, OUTPUT);  
+  pinMode(digitalPin, INPUT);
+  WiFi.begin(ssid, password); //ทำการ Connect SSID และ Pass
+  while (WiFi.status() != WL_CONNECTED) { // ถ้าไม่สามารถเชื่อมต่อได้
+    // ทำการ Print "Connectiong..." ทุก 1000ms
+    Serial.println("Connecting...  ");  
+    // แสดงสถานะการเชื่อมต่อ
+    Serial.printf("Connection Status: %d\n", WiFi.status()); 
+    delay(1000);
+
+    
+  }
+  // จะหลุดออกจาก while ก็ต่อเมือ Connected เรียบร้อย
+  Serial.print("Wi-Fi connected."); 
+  Serial.print("IP Address : ");
+  Serial.println(WiFi.localIP());  // ทำการ Print IP ที่ได้รับมาจาก 
+
+  
+}
+ WiFiClient client;
+  void sendToServer (int data){
+    HTTPClient http;
+    String postData = "String(data)";
+    String URL = "http://192.168.1.110/config/config.php?ir_data="+String(data);
+    http.begin(URL);
+  http.addHeader("Content-Type", "application/x-www-form-urlencoded");
+  
+  int httpCode = http.POST(postData); 
+  String payload = http.getString(); 
+  
+  Serial.print("URL : "); Serial.println(URL); 
+  Serial.print("Data: "); Serial.println(postData); 
+  Serial.print("httpCode: "); Serial.println(httpCode); 
+  Serial.print("payload : "); Serial.println(payload); 
+  Serial.println("--------------------------------------------------");
+}
+
+   
+    
+  //   if (client.connect(server,httpPort )) {
+  //   Serial.println("Connected to server");
+  //    client.print("GET http://localhost/config/config.php?ir_data=");
+  //    client.print(data);
+  //    client.println(" HTTP/1.1");
+  //    client.print("Host: ");
+  //    client.println(server);
+  //    client.println("Connection: close");
+  //    client.println();
+  //    delay(1000);
+  //    while (client.available()) {
+  //      char c = client.read();
+  //      Serial.print(c);
+  //    }
+  //    client.stop();
+  //  } else {
+  //   Serial.println("Connection failed");
+   
+  
+
+
+//Loop
+void loop() { 
+  Serial.printf("Connection Status: %d\n", WiFi.status());// แสดงสถานะการเชื่อมต่อ
+  delay(1000);
+  data = digitalRead(digitalPin);  //อ่านค่าสัญญาณ digital ขาD1 ที่ต่อกับ เซ็นเซอร์ตรวจจับวัตถุ IR Infrared
+  Serial.print("data = "); // พิมพ์ข้อมความส่งเข้าคอมพิวเตอร์ "val = "
+  Serial.println(data); // พิมพ์ค่าของตัวแปร val
+ if (data == 0) {
+    digitalWrite(ledPin, HIGH);
+    sendToServer(data);
+  } else {
+    digitalWrite(ledPin, LOW);
+    
+    sendToServer(data);
+  }
+   delay(2000);
+  
+}
